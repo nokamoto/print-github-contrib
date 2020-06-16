@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/nokamoto/print-github-contrib/cmd/flags"
 	"github.com/nokamoto/print-github-contrib/cmd/github"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -13,6 +14,8 @@ func newPrint() *cobra.Command {
 		debug         bool
 		enterpriseURL string
 		sleep         time.Duration
+		start         flags.Time
+		end           flags.Time
 	)
 
 	cmd := &cobra.Command{
@@ -46,9 +49,16 @@ func newPrint() *cobra.Command {
 
 			ctx := context.Background()
 
-			_, err = client.ListRepositoryByOrg(ctx, org)
+			repos, err := client.ListRepositoryByOrg(ctx, org)
 			if err != nil {
 				return err
+			}
+
+			for _, repo := range repos {
+				_, err := client.ListPullRequest(ctx, org, repo.GetName(), start.Time, end.Time)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -60,6 +70,14 @@ func newPrint() *cobra.Command {
 	cmd.Flags().StringVar(&enterpriseURL, "enterprise-url", "", "http(s)://hostname/api/v3/")
 
 	cmd.Flags().DurationVar(&sleep, "sleep", 1*time.Second, "api request interval")
+
+	now := flags.Time{Time: time.Now()}
+
+	_ = start.Set(now.String())
+	cmd.Flags().Var(&start, "start", "layout=2006-01-02")
+
+	_ = end.Set(now.String())
+	cmd.Flags().Var(&end, "end", "layout=2006-01-02")
 
 	return cmd
 }
