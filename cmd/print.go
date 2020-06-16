@@ -55,7 +55,12 @@ func newPrint() *cobra.Command {
 			}
 
 			for _, repo := range repos {
-				_, err := client.ListPullRequest(ctx, org, repo.GetName(), start.Time, end.Time)
+				prs, err := client.ListPullRequest(ctx, org, repo.GetName(), start.Time, end.Time)
+				if err != nil {
+					return err
+				}
+
+				_, err = client.ListContribution(ctx, org, repo.GetName(), prs)
 				if err != nil {
 					return err
 				}
