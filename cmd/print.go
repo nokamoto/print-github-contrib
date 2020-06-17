@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	gogithub "github.com/google/go-github/v32/github"
+	"github.com/nokamoto/print-github-contrib/cmd/contribution"
 	"github.com/nokamoto/print-github-contrib/cmd/flags"
 	"github.com/nokamoto/print-github-contrib/cmd/github"
 	"github.com/spf13/cobra"
@@ -16,6 +19,8 @@ func newPrint() *cobra.Command {
 		sleep         time.Duration
 		start         flags.Time
 		end           flags.Time
+		output        flags.Output
+		repositories  []string
 	)
 
 	cmd := &cobra.Command{
@@ -49,9 +54,23 @@ func newPrint() *cobra.Command {
 
 			ctx := context.Background()
 
+			owner := contribution.NewOwner(org, start.Time, end.Time)
+
 			repos, err := client.ListRepositoryByOrg(ctx, org)
 			if err != nil {
 				return err
+			}
+
+			if repositories != nil {
+				var whitelist []*gogithub.Repository
+				for _, repo := range repos {
+					for _, n := range repositories {
+						if repo.GetName() == n {
+							whitelist = append(whitelist, repo)
+						}
+					}
+				}
+				repos = whitelist
 			}
 
 			for _, repo := range repos {
@@ -60,10 +79,30 @@ func newPrint() *cobra.Command {
 					return err
 				}
 
-				_, err = client.ListContribution(ctx, org, repo.GetName(), prs)
+				contrib, err := client.ListContribution(ctx, org, repo.GetName(), prs)
 				if err != nil {
 					return err
 				}
+
+				owner.AddRepository(contribution.NewRepository(repo.GetName(), contrib))
+			}
+
+			switch output.Value {
+			case flags.JSON:
+				out, err := owner.JSON()
+				if err != nil {
+					return err
+				}
+
+				cmd.Println(out)
+
+			case flags.CSV:
+				out, err := owner.CSV()
+				if err != nil {
+					return err
+				}
+
+				cmd.Println(out)
 			}
 
 			return nil
@@ -79,10 +118,15 @@ func newPrint() *cobra.Command {
 	now := flags.Time{Time: time.Now()}
 
 	_ = start.Set(now.String())
-	cmd.Flags().Var(&start, "start", "layout=2006-01-02")
+	cmd.Flags().Var(&start, "start", fmt.Sprintf("layout=%s", flags.Layout))
 
 	_ = end.Set(now.String())
-	cmd.Flags().Var(&end, "end", "layout=2006-01-02")
+	cmd.Flags().Var(&end, "end", fmt.Sprintf("layout=%s", flags.Layout))
+
+	output.Value = flags.CSV
+	cmd.Flags().VarP(&output, "output", "o", fmt.Sprintf("%s or %s", flags.JSON, flags.CSV))
+
+	cmd.Flags().StringSliceVar(&repositories, "repositories", nil, "whitelist if needed")
 
 	return cmd
 }
