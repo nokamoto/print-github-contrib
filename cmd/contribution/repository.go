@@ -3,6 +3,7 @@ package contribution
 import (
 	"fmt"
 	"github.com/nokamoto/print-github-contrib/cmd/github"
+	"sort"
 )
 
 type Repository struct {
@@ -51,8 +52,14 @@ func (r *Repository) Rows(owner string, contributorsName []string) []CSVRow {
 		createdAt[c.CreatedAt] = struct{}{}
 	}
 
-	var rows []CSVRow
+	var sortedCreatedAt []string
 	for at := range createdAt {
+		sortedCreatedAt = append(sortedCreatedAt, at)
+	}
+	sort.Strings(sortedCreatedAt)
+
+	var rows []CSVRow
+	for _, at := range sortedCreatedAt {
 		row := CSVRow{
 			CreatedAt:    at,
 			Owner:        owner,
