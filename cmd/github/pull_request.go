@@ -8,9 +8,10 @@ import (
 )
 
 type Contribution struct {
-	PullRequest *github.PullRequest
-	Reviews     []*github.PullRequestReview
-	Comments    []*github.PullRequestComment
+	PullRequest   *github.PullRequest
+	Reviews       []*github.PullRequestReview
+	Comments      []*github.PullRequestComment
+	IssueComments []*github.IssueComment
 }
 
 func (c *Client) ListReview(ctx context.Context, owner string, repo string, pr *github.PullRequest) ([]*github.PullRequestReview, error) {
@@ -71,6 +72,35 @@ func (c *Client) ListComment(ctx context.Context, owner string, repo string, pr 
 	return comments, nil
 }
 
+func (c *Client) ListIssueComment(ctx context.Context, owner string, repo string, pr *github.PullRequest) ([]*github.IssueComment, error) {
+	logger := c.logger.With(zap.String("owner", owner), zap.String("repo", repo), zap.Int("pr", pr.GetNumber()))
+	logger.Debug("ListIssueComment")
+
+	opts := &github.IssueListCommentsOptions{ListOptions: github.ListOptions{PerPage: 30}}
+
+	var comments []*github.IssueComment
+	for {
+		cs, res, err := c.client.Issues.ListComments(ctx, owner, repo, pr.GetNumber(), opts)
+
+		time.Sleep(c.sleep)
+
+		logger.Debug("ListComments", zap.Int("comments", len(cs)))
+		if err != nil {
+			return nil, err
+		}
+
+		comments = append(comments, cs...)
+
+		if res.NextPage == 0 {
+			break
+		}
+
+		opts.Page = res.NextPage
+	}
+
+	return comments, nil
+}
+
 func (c *Client) ListContribution(ctx context.Context, owner string, repo string, prs []*github.PullRequest) ([]*Contribution, error) {
 	var contrib []*Contribution
 
@@ -85,10 +115,16 @@ func (c *Client) ListContribution(ctx context.Context, owner string, repo string
 			return nil, err
 		}
 
+		issueComments, err := c.ListIssueComment(ctx, owner, repo, pr)
+		if err != nil {
+			return nil, err
+		}
+
 		contrib = append(contrib, &Contribution{
-			PullRequest: pr,
-			Reviews:     reviews,
-			Comments:    comments,
+			PullRequest:   pr,
+			Reviews:       reviews,
+			Comments:      comments,
+			IssueComments: issueComments,
 		})
 	}
 

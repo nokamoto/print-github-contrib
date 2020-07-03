@@ -10,7 +10,6 @@ type Contributor struct {
 	CreatedAt   string
 	PullRequest int
 	Approve     int
-	Reviews     int
 	Comment     int
 }
 
