@@ -54,7 +54,6 @@ func (o *Owner) CSV() (string, error) {
 		Total: CSVColumn{
 			PullRequest: "pull_request",
 			Approve:     "approve",
-			Review:      "review",
 			Comment:     "comment",
 		},
 		Contributors: map[string]CSVColumn{},
@@ -64,7 +63,6 @@ func (o *Owner) CSV() (string, error) {
 		header.Contributors[c] = CSVColumn{
 			PullRequest: fmt.Sprintf("%s.pull_request", c),
 			Approve:     fmt.Sprintf("%s.approve", c),
-			Review:      fmt.Sprintf("%s.review", c),
 			Comment:     fmt.Sprintf("%s.comment", c),
 		}
 	}

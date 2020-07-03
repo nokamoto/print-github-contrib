@@ -57,6 +57,11 @@ func ExampleOwner_CSV() {
 					User: &barney,
 				},
 			},
+			IssueComments: []*gogithub.IssueComment{
+				{
+					User: &fred,
+				},
+			},
 		},
 		{
 			PullRequest: &gogithub.PullRequest{
@@ -102,7 +107,7 @@ func ExampleOwner_CSV() {
 	fmt.Println(csv)
 
 	// Output:
-	// created_at,owner,repository,pull_request,approve,review,comment,alice.pull_request,alice.approve,alice.review,alice.comment,barney.pull_request,barney.approve,barney.review,barney.comment,bob.pull_request,bob.approve,bob.review,bob.comment,fred.pull_request,fred.approve,fred.review,fred.comment
-	// 2020-05,foo,bar,1,1,1,0,1,0,0,0,,,,,0,1,1,0,,,,
-	// 2020-06,foo,bar,2,2,2,4,0,1,1,0,1,0,0,2,1,1,1,0,0,0,0,2
+	// created_at,owner,repository,pull_request,approve,comment,alice.pull_request,alice.approve,alice.comment,barney.pull_request,barney.approve,barney.comment,bob.pull_request,bob.approve,bob.comment,fred.pull_request,fred.approve,fred.comment
+	// 2020-05,foo,bar,1,1,0,1,0,0,,,,0,1,0,,,
+	// 2020-06,foo,bar,2,2,5,0,1,0,1,0,2,1,1,0,0,0,3
 }

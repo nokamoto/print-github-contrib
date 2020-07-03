@@ -11,7 +11,6 @@ type CSVRow struct {
 type CSVColumn struct {
 	PullRequest string
 	Approve     string
-	Review      string
 	Comment     string
 }
 
@@ -31,7 +30,6 @@ func (c CSVColumn) Row() []string {
 	var r []string
 	r = append(r, c.PullRequest)
 	r = append(r, c.Approve)
-	r = append(r, c.Review)
 	r = append(r, c.Comment)
 	return r
 }

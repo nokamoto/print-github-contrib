@@ -30,8 +30,6 @@ func NewRepository(name string, contrib []*github.Contribution) *Repository {
 			if review.GetState() == "APPROVED" {
 				approve[name] = struct{}{}
 			}
-
-			repo.Contributors.Get(name, c.PullRequest).Reviews += 1
 		}
 
 		for name := range approve {
@@ -39,6 +37,10 @@ func NewRepository(name string, contrib []*github.Contribution) *Repository {
 		}
 
 		for _, comment := range c.Comments {
+			repo.Contributors.Get(comment.GetUser().GetLogin(), c.PullRequest).Comment += 1
+		}
+
+		for _, comment := range c.IssueComments {
 			repo.Contributors.Get(comment.GetUser().GetLogin(), c.PullRequest).Comment += 1
 		}
 	}
@@ -70,20 +72,17 @@ func (r *Repository) Rows(owner string, contributorsName []string) []CSVRow {
 
 		totalPullRequest := 0
 		totalApprove := 0
-		totalReviews := 0
 		totalComment := 0
 
 		for _, c := range r.Contributors {
 			if c.CreatedAt == at {
 				totalPullRequest += c.PullRequest
 				totalApprove += c.Approve
-				totalReviews += c.Reviews
 				totalComment += c.Comment
 
 				row.Contributors[c.Name] = CSVColumn{
 					PullRequest: fmt.Sprintf("%d", c.PullRequest),
 					Approve:     fmt.Sprintf("%d", c.Approve),
-					Review:      fmt.Sprintf("%d", c.Reviews),
 					Comment:     fmt.Sprintf("%d", c.Comment),
 				}
 			}
@@ -92,7 +91,6 @@ func (r *Repository) Rows(owner string, contributorsName []string) []CSVRow {
 		row.Total = CSVColumn{
 			PullRequest: fmt.Sprintf("%d", totalPullRequest),
 			Approve:     fmt.Sprintf("%d", totalApprove),
-			Review:      fmt.Sprintf("%d", totalReviews),
 			Comment:     fmt.Sprintf("%d", totalComment),
 		}
 
